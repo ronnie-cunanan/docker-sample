@@ -7,4 +7,4 @@
     - name: Restart container
       shell: |
         docker rm -f {{CONTAINER_NAME}} || true
-        docker run -d --name {{CONTAINER_NAME}} -p 8081:5000 {{ECR_URL}}:{{IMAGE_TAG}}"
+        docker run -d --name {{CONTAINER_NAME}} -p 8081:5000 {{ECR_URL}}:{{IMAGE_TAG}}
