@@ -14,7 +14,7 @@
       become: false
       # remote_user: "{{ lookup('env', 'USER') }}"
       run_once: true
-      no_log: true
+      no_log: false
 
     - name: Log into ECR registry on remote host
       community.docker.docker_login:
