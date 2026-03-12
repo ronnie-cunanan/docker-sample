@@ -1,10 +1,34 @@
-- hosts: web
-  become: true
-  tasks:
-    - name: Pull latest Docker image
-      shell: docker pull my-python-app:latest
+- name: Deploy Docker image from AWS ECR
+  hosts: web
+  vars:
+    aws_region: "{{ AWS_REGION }}"
+    aws_account_id: "{{ AWS_ACCOUNT_ID }}"
+    repo_name: "{{ ECR_REPO }}"
+    image_tag: "{{ IMAGE_TAG }}"
+    container_name: "{{ CONTAINER_NAME }}"
+    registry_url: "{{ aws_account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
+    full_image: "{{ registry_url }}/{{ repo_name }}:{{ image_tag }}"
 
-    - name: Restart container
-      shell: |
-        docker rm -f {{CONTAINER_NAME}} || true
-        docker run -d --name {{CONTAINER_NAME}} -p 8081:5000 {{ECR_URL}}:{{IMAGE_TAG}}
+  tasks:
+    - name: Log into ECR registry
+      community.docker.docker_login:
+        registry_url: "{{ registry_url }}"
+        username: AWS
+        # This native lookup replaces the shell 'aws ecr get-login-password'
+        password: "{{ lookup('amazon.aws.aws_ecr_get_login_password', region=aws_region) }}"
+        reauthorize: true
+
+    - name: Pull image from ECR
+      community.docker.docker_image:
+        name: "{{ full_image }}"
+        source: pull
+
+    - name: Ensure container is running with latest image
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ full_image }}"
+        state: started
+        restart_policy: always
+        recreate: true # Restarts only if the image or config changed
+        published_ports:
+          - "8081:5000"
