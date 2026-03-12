@@ -1,21 +1,23 @@
 - name: Deploy Docker image from AWS ECR
   hosts: web
   vars:
-    aws_region: "{{ AWS_REGION }}"
-    aws_account_id: "{{ AWS_ACCOUNT_ID }}"
-    repo_name: "{{ ECR_REPO }}"
-    image_tag: "{{ IMAGE_TAG }}"
-    container_name: "{{ CONTAINER_NAME }}"
+    # Variables are passed via --extra-vars in your Jenkins command
     registry_url: "{{ aws_account_id }}.dkr.ecr.{{ aws_region }}.amazonaws.com"
     full_image: "{{ registry_url }}/{{ repo_name }}:{{ image_tag }}"
 
   tasks:
-    - name: Log into ECR registry
+    - name: Get ECR login password from local AWS CLI
+      ansible.builtin.shell: "aws ecr get-login-password --region {{ aws_region }}"
+      register: ecr_password
+      delegate_to: localhost
+      run_once: true
+      no_log: true
+
+    - name: Log into ECR registry on remote host
       community.docker.docker_login:
         registry_url: "{{ registry_url }}"
         username: AWS
-        # This native lookup replaces the shell 'aws ecr get-login-password'
-        password: "{{ lookup('amazon.aws.aws_ecr_get_login_password', region=aws_region) }}"
+        password: "{{ ecr_password.stdout }}"
         reauthorize: true
 
     - name: Pull image from ECR
@@ -23,12 +25,12 @@
         name: "{{ full_image }}"
         source: pull
 
-    - name: Ensure container is running with latest image
+    - name: Ensure container is running
       community.docker.docker_container:
-        name: "{{ container_name }}"
+        name: "{{ CONTAINER_NAME }}"
         image: "{{ full_image }}"
         state: started
         restart_policy: always
-        recreate: true # Restarts only if the image or config changed
+        recreate: true
         published_ports:
           - "8081:5000"
