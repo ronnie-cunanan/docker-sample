@@ -6,12 +6,21 @@
     full_image: "{{ registry_url }}/{{ repo_name }}:{{ image_tag }}"
 
   tasks:
+    - name: Ensure AWS CLI and Docker dependencies are present
+      ansible.builtin.apt:
+        name: 
+          - awscli
+          - python3-pip
+          - python3-docker
+        state: present
+        update_cache: yes
+
     - name: Get ECR login password from local AWS CLI
       ansible.builtin.shell: "aws ecr get-login-password --region {{ aws_region }}"
       register: ecr_password
+      become: false
       # delegate_to: localhost
-      # connection: local
-      # become: false
+      # connection: local      
       # remote_user: "{{ lookup('env', 'USER') }}"
       # run_once: true
       no_log: true
