@@ -10,6 +10,7 @@
       ansible.builtin.shell: "aws ecr get-login-password --region {{ aws_region }}"
       register: ecr_password
       delegate_to: localhost
+      connection: local
       run_once: true
       no_log: true
 
