@@ -9,12 +9,12 @@
     - name: Get ECR login password from local AWS CLI
       ansible.builtin.shell: "aws ecr get-login-password --region {{ aws_region }}"
       register: ecr_password
-      delegate_to: localhost
-      connection: local
-      become: false
+      # delegate_to: localhost
+      # connection: local
+      # become: false
       # remote_user: "{{ lookup('env', 'USER') }}"
-      run_once: true
-      no_log: false
+      # run_once: true
+      no_log: true
 
     - name: Log into ECR registry on remote host
       community.docker.docker_login:
