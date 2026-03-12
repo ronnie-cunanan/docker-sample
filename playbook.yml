@@ -11,7 +11,8 @@
       register: ecr_password
       delegate_to: localhost
       connection: local
-      remote_user: "{{ lookup('env', 'USER') }}"
+      become: false
+      # remote_user: "{{ lookup('env', 'USER') }}"
       run_once: true
       no_log: true
 
